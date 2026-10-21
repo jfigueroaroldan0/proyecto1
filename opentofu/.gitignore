@@ -1,0 +1,26 @@
+# OpenTofu/Terraform directories
+.terraform/
+
+# State files
+*.tfstate
+*.tfstate.backup
+
+# Lock file (generated, not source)
+.terraform.lock.hcl
+
+# Variable files with secrets
+*.tfvars
+*.tfvars.json
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Inventario de Ansible generado por OpenTofu
+hosts
