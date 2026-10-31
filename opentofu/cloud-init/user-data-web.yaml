@@ -1,0 +1,19 @@
+#cloud-config
+hostname: web
+
+users:
+  - name: debian
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCn9wbC3AHWVINGD79kMzloLkm061wN8uAiep5FXipUT1oTKql1J3Pb/88RmZn0oGlyFxB9zB7dOVkwpT2H31w/mR+ULRmNJKUngWejiu/DzDfCvXeE3g0k80awpR3GuBCD86A7DLNA9c/wsHpP4J+J+ERvMykJWFYdDGGZZ6xFP9OivOJuGDzCxk5lnrSy1xhLD+cpEMkGPKDKTOGXFcm3q93SGn1CKPcb7J9ujnpGytEYOPKAiNwqvyLHFvKXX8uMB4sjI+MnC9QlL6xdMgy4p0zhwYMGktmnU0gAeTzIgKBDaip9PT6qtXGV7AaIbYwcz6DZOv7b35ElBfK596OG0A2xoEyPE9KqadHqSPsM+EYzqJoxr85AEao5urc1IfgDPjL8TitGa4n09Aldeida6wdzXnc5N8SbqJhD035fOZXWb4ev0cAzEi/q4AeUHkWnNEfIrKGJ1OXHlgmWHbOcYi864nybFufq8jrmpz2RcvYv61eeiW2nfolK7ZPB0Ek= jesusfigueroa@debian
+
+chpasswd:
+  expire: False
+  users:
+    - name: debian
+      password: debian
+      type: text
+
+timezone: Europe/Madrid
