@@ -8,7 +8,7 @@ Escenario creado con **OpenTofu** (libvirt/KVM) y configurado con **Ansible** qu
                  Anfitrión
                      │ 192.168.210.1
      ┌───────────────┴────────────────┐
-     │  p1-red-nat (NAT + DHCP)        │  192.168.210.0/24
+     │  p1-red-nat (NAT + DHCP)       │  192.168.210.0/24
      └──────┬──────────────────┬──────┘
        ens3 │ DHCP        ens3 │ DHCP
      ┌──────┴──────┐    ┌──────┴──────┐
@@ -17,7 +17,7 @@ Escenario creado con **OpenTofu** (libvirt/KVM) y configurado con **Ansible** qu
      └──────┬──────┘    └──────┬──────┘
        ens4 │ 10.0.0.10   ens4 │ 10.0.0.20
      ┌──────┴──────────────────┴──────┐
-     │  p1-red-datos (muy aislada)     │  10.0.0.0/24 · sin DHCP ·
+     │  p1-red-datos (muy aislada)    │  10.0.0.0/24 · sin DHCP ·
      └────────────────────────────────┘  el anfitrión no tiene IP
 ```
 
