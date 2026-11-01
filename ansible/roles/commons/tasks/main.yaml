@@ -1,0 +1,21 @@
+- name: Actualizar el sistema y los paquetes
+  apt:
+    update_cache: yes
+    upgrade: yes
+    cache_valid_time: 3600
+
+- name: Instalar los paquetes comunes
+  apt:
+    name: "{{ paquetes_comunes }}"
+    state: present
+
+- name: Añadir las entradas de la red de datos al fichero /etc/hosts
+  blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} ANSIBLE RED DE DATOS"
+    block: |
+      {{ web_ip_datos }} {{ web_nombre_datos }}
+      {{ bd_ip_datos }} {{ bd_nombre_datos }}
+    owner: root
+    group: root
+    mode: '0644'
