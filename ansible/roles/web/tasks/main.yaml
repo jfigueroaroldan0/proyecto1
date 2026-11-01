@@ -1,0 +1,61 @@
+- name: Instalar Apache con PHP
+  apt:
+    name:
+      - apache2
+      - php
+      - libapache2-mod-php
+      - php-mysql
+      - php-mbstring
+      - mariadb-client   # para comprobar la conexión a la base de datos
+    state: present
+
+- name: Activar modulos de apache2
+  community.general.apache2_module:
+    state: present
+    name: "{{ item }}"
+  loop: "{{ mods_enabled }}"
+  notify: restart apache2
+
+- name: Configuración de virtualhost
+  template:
+    src: etc/apache2/vhost.j2
+    dest: /etc/apache2/sites-available/{{ item.name }}.conf
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ virtualhosts }}"
+  notify: restart apache2
+
+- name: Crear DocumentRoot si no existe
+  ansible.builtin.file:
+    path: "{{ item.datos.documentroot }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+  loop: "{{ virtualhosts }}"
+
+- name: Activación de los VirtualHost
+  file:
+    src: /etc/apache2/sites-available/{{ item.name }}.conf
+    dest: /etc/apache2/sites-enabled/{{ item.name }}.conf
+    state: link
+  loop: "{{ virtualhosts }}"
+  notify: restart apache2
+
+- name: Copiar aplicación Guestbook
+  ansible.builtin.copy:
+    src: app/
+    dest: "{{ base_web_path }}/"
+    owner: www-data
+    group: www-data
+    mode: '0644'
+    directory_mode: '0755'
+
+- name: Crear fichero de configuración config.php dentro de la aplicación
+  ansible.builtin.template:
+    src: config.php.j2
+    dest: "{{ base_web_path }}/config.php"
+    owner: www-data
+    group: www-data
+    mode: '0640'
