@@ -1,0 +1,6 @@
+CREATE TABLE messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50) NOT NULL,
+  message TEXT NOT NULL,
+  created_at DATETIME NOT NULL
+) ENGINE=InnoDB;
