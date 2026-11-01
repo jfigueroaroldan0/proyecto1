@@ -1,0 +1,35 @@
+# Direcciones de las máquinas en la red de datos
+# (las mismas que en opentofu/cloud-init/network-config-*.yaml)
+web_ip_datos: 10.0.0.10
+bd_ip_datos: 10.0.0.20
+
+# Nombres de las máquinas en la red de datos (se añaden a /etc/hosts)
+web_nombre_datos: web.datos.org
+bd_nombre_datos: bd.datos.org
+
+# Paquetes comunes a todas las máquinas
+paquetes_comunes:
+  - vim
+  - curl
+
+# Virtual host de la aplicación
+virtualhosts:
+  - name: guestbook
+    datos:
+      nameserver: www.jesusfigueroa.org
+      documentroot: /var/www/guestbook
+      errorlog: error_guestbook
+      accesslog: access_guestbook
+
+# Módulos de apache2 que hay que activar (rewrite lo usa el .htaccess)
+mods_enabled:
+  - rewrite
+
+# Directorio donde se despliega la aplicación
+base_web_path: /var/www/guestbook
+
+# Conexión a MariaDB de la aplicación guestbook
+guestbook_db_host: "{{ bd_ip_datos }}"
+guestbook_db_name: guestbook_db
+guestbook_db_user: guestbook_user
+guestbook_db_password: guestbook_pass
