@@ -1,0 +1,72 @@
+- name: Instalar MariaDB
+  apt:
+    pkg:
+      - mariadb-server
+      - python3-mysqldb
+    state: present
+
+# Solo escucha en la red de datos: no es accesible desde la red NAT
+- name: Configurar MariaDB para escuchar solo en la red de datos
+  ansible.builtin.lineinfile:
+    path: /etc/mysql/mariadb.conf.d/50-server.cnf
+    regexp: '^bind-address'
+    line: 'bind-address = {{ bd_ip_datos }}'
+    state: present
+  notify: restart mariadb
+
+# Si MariaDB arranca antes de que ens4 tenga IP no puede escuchar en ella:
+# que espere a que la red esté configurada (importa al reiniciar la máquina)
+- name: Crear directorio de configuración de systemd para mariadb
+  ansible.builtin.file:
+    path: /etc/systemd/system/mariadb.service.d
+    state: directory
+    mode: '0755'
+
+- name: MariaDB arranca cuando la red está lista
+  ansible.builtin.copy:
+    src: red.conf
+    dest: /etc/systemd/system/mariadb.service.d/red.conf
+    mode: '0644'
+  notify: restart mariadb
+
+- name: Aplicar ya los cambios de configuración
+  ansible.builtin.meta: flush_handlers
+
+- name: Crear base de datos
+  community.mysql.mysql_db:
+    name: "{{ guestbook_db_name }}"
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+# Solo puede conectarse desde la IP del servidor web en la red de datos
+- name: Crear usuario y otorgar privilegios
+  community.mysql.mysql_user:
+    name: "{{ guestbook_db_user }}"
+    password: "{{ guestbook_db_password }}"
+    host: "{{ web_ip_datos }}"
+    priv: "{{ guestbook_db_name }}.*:ALL"
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Copiar esquema SQL al servidor
+  ansible.builtin.copy:
+    src: schema.sql
+    dest: /root/schema.sql
+    mode: '0600'
+
+# Idempotencia: schema.sql solo se importa si la tabla todavía no existe.
+# La consulta no modifica nada, por eso changed_when: false.
+- name: Comprobar si la tabla 'messages' existe
+  community.mysql.mysql_query:
+    login_unix_socket: /run/mysqld/mysqld.sock
+    query: "SHOW TABLES FROM {{ guestbook_db_name }} LIKE 'messages'"
+  register: table_check
+  changed_when: false
+
+- name: Importar esquema SQL (solo si la tabla no existe)
+  community.mysql.mysql_db:
+    name: "{{ guestbook_db_name }}"
+    state: import
+    target: /root/schema.sql
+    login_unix_socket: /run/mysqld/mysqld.sock
+  when: table_check.query_result[0] | length == 0
