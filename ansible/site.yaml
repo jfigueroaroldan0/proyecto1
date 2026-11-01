@@ -1,0 +1,29 @@
+# Justo después de "tofu apply" las máquinas pueden estar arrancando y
+# cloud-init trabajando: se espera a que terminen antes de configurarlas.
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Esperar a que las máquinas respondan por SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    # cloud-init crea este fichero cuando termina
+    - name: Esperar a que termine cloud-init
+      ansible.builtin.wait_for:
+        path: /var/lib/cloud/instance/boot-finished
+        timeout: 300
+
+- hosts: all
+  become: true
+  roles:
+   - role: commons
+
+- hosts: servidores_bd
+  become: true
+  roles:
+   - role: bd
+
+- hosts: servidores_web
+  become: true
+  roles:
+   - role: web
