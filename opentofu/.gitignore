@@ -24,3 +24,6 @@ override.tf.json
 
 # Inventario de Ansible generado por OpenTofu
 hosts
+
+# Foto escenario
+esquema-proyecto1.png
