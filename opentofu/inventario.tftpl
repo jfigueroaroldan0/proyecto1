@@ -1,0 +1,16 @@
+# Fichero generado por OpenTofu (inventario.tf): no lo edites a mano
+all:
+  children:
+    servidores_web:
+      hosts:
+        web:
+          ansible_host: ${ip_web}
+          ansible_user: debian
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
+
+    servidores_bd:
+      hosts:
+        bd:
+          ansible_host: ${ip_bd}
+          ansible_user: ubuntu
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
