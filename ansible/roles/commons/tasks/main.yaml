@@ -14,8 +14,10 @@
     path: /etc/hosts
     marker: "# {mark} ANSIBLE RED DE DATOS"
     block: |
-      {{ web_ip_datos }} {{ web_nombre_datos }}
+      {{ web1_ip_datos }} {{ web1_nombre_datos }}
+      {{ web2_ip_datos }} {{ web2_nombre_datos }}
       {{ bd_ip_datos }} {{ bd_nombre_datos }}
+      {{ balanceador_ip_datos }} {{ balanceador_nombre_datos }}
     owner: root
     group: root
     mode: '0644'
