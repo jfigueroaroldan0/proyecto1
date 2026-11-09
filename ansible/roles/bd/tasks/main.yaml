@@ -38,15 +38,16 @@
     state: present
     login_unix_socket: /run/mysqld/mysqld.sock
 
-# Solo puede conectarse desde la IP del servidor web en la red de datos
-- name: Crear usuario y otorgar privilegios
+# Solo puede conectarse desde las IP de los servidores web en la red de datos
+- name: Crear usuario y otorgar privilegios (uno por cada web)
   community.mysql.mysql_user:
     name: "{{ guestbook_db_user }}"
     password: "{{ guestbook_db_password }}"
-    host: "{{ web_ip_datos }}"
+    host: "{{ item }}"
     priv: "{{ guestbook_db_name }}.*:ALL"
     state: present
     login_unix_socket: /run/mysqld/mysqld.sock
+  loop: "{{ web_ips_datos }}"
 
 - name: Copiar esquema SQL al servidor
   ansible.builtin.copy:
