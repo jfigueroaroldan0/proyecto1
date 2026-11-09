@@ -1,0 +1,8 @@
+network:
+  version: 2
+  ethernets:
+    ens3:
+      dhcp4: true                  # red NAT con DHCP (punto de entrada)
+    ens4:
+      dhcp4: false
+      addresses: ["10.0.0.30/24"]  # red de datos (habla con web1 y web2)
