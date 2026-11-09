@@ -1,0 +1,33 @@
+# Fichero generado por Ansible (rol balanceador): no lo edites a mano
+global
+    log /dev/log local0
+    maxconn 2048
+    daemon
+
+defaults
+    log     global
+    mode    http
+    option  httplog
+    option  dontlognull
+    timeout connect 5s
+    timeout client  30s
+    timeout server  30s
+
+# Punto de entrada: recibe las peticiones del anfitrión
+frontend http_in
+    bind *:{{ haproxy_frontend_port }}
+    default_backend webservers
+
+# Reparte en round-robin entre los servidores web por la red de datos
+backend webservers
+    balance roundrobin
+{% for b in web_backends %}
+    server {{ b.nombre }} {{ b.ip }}:80 check
+{% endfor %}
+
+# Página de estadísticas (para ver el reparto y el estado de los backends)
+listen stats
+    bind *:8404
+    stats enable
+    stats uri /
+    stats refresh 5s

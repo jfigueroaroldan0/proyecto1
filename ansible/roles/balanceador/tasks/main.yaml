@@ -1,0 +1,21 @@
+- name: Instalar HAProxy
+  ansible.builtin.apt:
+    name: haproxy
+    state: present
+
+- name: Configurar HAProxy (frontend y backends)
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: '0644'
+    # No aplica una configuración inválida: la valida antes de guardarla.
+    validate: 'haproxy -c -f %s'
+  notify: restart haproxy
+
+- name: Asegurar que HAProxy está arrancado y habilitado
+  ansible.builtin.service:
+    name: haproxy
+    state: started
+    enabled: true
