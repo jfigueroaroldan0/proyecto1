@@ -31,3 +31,9 @@ variable "memoria_bd" {
   description = "Memoria RAM (MB) del servidor de base de datos."
   default     = 1024
 }
+
+variable "memoria_balanceador" {
+  type        = number
+  description = "Memoria RAM (MB) del balanceador de carga (HAProxy)."
+  default     = 512
+}
