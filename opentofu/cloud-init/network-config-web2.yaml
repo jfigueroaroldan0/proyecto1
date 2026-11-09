@@ -1,0 +1,8 @@
+network:
+  version: 2
+  ethernets:
+    ens3:
+      dhcp4: true                  # red NAT con DHCP
+    ens4:
+      dhcp4: false
+      addresses: ["10.0.0.12/24"]  # red de datos (muy aislada)
