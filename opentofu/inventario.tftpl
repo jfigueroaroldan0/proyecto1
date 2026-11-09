@@ -1,12 +1,21 @@
 # Fichero generado por OpenTofu (inventario.tf): no lo edites a mano
 all:
   children:
-    servidores_web:
+    servidores_balanceador:
       hosts:
-        web:
-          ansible_host: ${ip_web}
+        balanceador:
+          ansible_host: ${ip_balanceador}
           ansible_user: debian
           ansible_ssh_private_key_file: ~/.ssh/id_rsa
+
+    servidores_web:
+      hosts:
+%{ for nombre, ip in webs ~}
+        ${nombre}:
+          ansible_host: ${ip}
+          ansible_user: debian
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
+%{ endfor ~}
 
     servidores_bd:
       hosts:
