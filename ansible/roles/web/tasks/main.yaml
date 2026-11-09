@@ -43,6 +43,14 @@
   loop: "{{ virtualhosts }}"
   notify: restart apache2
 
+# El tráfico llega a través de HAProxy sin el ServerName del vhost, así que se
+# desactiva el sitio por defecto para que guestbook atienda todas las peticiones.
+- name: Desactivar el sitio por defecto de Apache
+  ansible.builtin.file:
+    path: /etc/apache2/sites-enabled/000-default.conf
+    state: absent
+  notify: restart apache2
+
 - name: Copiar aplicación Guestbook
   ansible.builtin.copy:
     src: app/
