@@ -1,11 +1,25 @@
 # Direcciones de las máquinas en la red de datos
-# (las mismas que en opentofu/cloud-init/network-config-*.yaml)
-web_ip_datos: 10.0.0.10
+# (las mismas que en opentofu: locals.webs y cloud-init/network-config-*.yaml)
+web1_ip_datos: 10.0.0.11
+web2_ip_datos: 10.0.0.12
 bd_ip_datos: 10.0.0.20
+balanceador_ip_datos: 10.0.0.30
+
+# Lista de IP de los web (la usa bd para dar permiso de conexión a MariaDB)
+web_ips_datos:
+  - "{{ web1_ip_datos }}"
+  - "{{ web2_ip_datos }}"
+
+# Backends que reparte HAProxy (nombre e IP en la red de datos)
+web_backends:
+  - { nombre: web1, ip: "{{ web1_ip_datos }}" }
+  - { nombre: web2, ip: "{{ web2_ip_datos }}" }
 
 # Nombres de las máquinas en la red de datos (se añaden a /etc/hosts)
-web_nombre_datos: web.datos.org
+web1_nombre_datos: web1.datos.org
+web2_nombre_datos: web2.datos.org
 bd_nombre_datos: bd.datos.org
+balanceador_nombre_datos: balanceador.datos.org
 
 # Paquetes comunes a todas las máquinas
 paquetes_comunes:
@@ -33,3 +47,6 @@ guestbook_db_host: "{{ bd_ip_datos }}"
 guestbook_db_name: guestbook_db
 guestbook_db_user: guestbook_user
 guestbook_db_password: guestbook_pass
+
+# Puerto en el que escucha HAProxy (punto de entrada)
+haproxy_frontend_port: 80
