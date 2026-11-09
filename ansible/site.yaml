@@ -27,3 +27,8 @@
   become: true
   roles:
    - role: web
+
+- hosts: servidores_balanceador
+  become: true
+  roles:
+   - role: balanceador
