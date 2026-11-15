@@ -37,3 +37,9 @@ variable "memoria_balanceador" {
   description = "Memoria RAM (MB) del balanceador de carga (HAProxy)."
   default     = 512
 }
+
+variable "memoria_almacen" {
+  type        = number
+  description = "Memoria RAM (MB) del servidor de almacenamiento (NFS)."
+  default     = 512
+}
