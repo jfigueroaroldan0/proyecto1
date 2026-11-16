@@ -23,6 +23,13 @@
   roles:
    - role: bd
 
+# El servidor de almacenamiento se configura antes que los web, porque los
+# backends montan por NFS su DocumentRoot desde él.
+- hosts: servidores_almacen
+  become: true
+  roles:
+   - role: nfs
+
 - hosts: servidores_web
   become: true
   roles:

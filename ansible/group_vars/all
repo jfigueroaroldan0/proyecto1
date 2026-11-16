@@ -4,6 +4,7 @@ web1_ip_datos: 10.0.0.11
 web2_ip_datos: 10.0.0.12
 bd_ip_datos: 10.0.0.20
 balanceador_ip_datos: 10.0.0.30
+almacen_ip_datos: 10.0.0.40
 
 # Lista de IP de los web (la usa bd para dar permiso de conexión a MariaDB)
 web_ips_datos:
@@ -20,6 +21,7 @@ web1_nombre_datos: web1.datos.org
 web2_nombre_datos: web2.datos.org
 bd_nombre_datos: bd.datos.org
 balanceador_nombre_datos: balanceador.datos.org
+almacen_nombre_datos: almacen.datos.org
 
 # Paquetes comunes a todas las máquinas
 paquetes_comunes:
@@ -39,8 +41,18 @@ virtualhosts:
 mods_enabled:
   - rewrite
 
-# Directorio donde se despliega la aplicación
+# Directorio donde se despliega la aplicación.
+# En el servidor almacen es la ruta exportada por NFS; en los web es el
+# punto de montaje (DocumentRoot del virtualhost), así que coinciden.
 base_web_path: /var/www/guestbook
+
+# Almacenamiento compartido por NFS (servidor "almacen")
+# El servidor exporta aquí la aplicación (un único despliegue) y los dos
+# backends la montan en su DocumentRoot, sirviendo exactamente lo mismo.
+nfs_export_path: "{{ base_web_path }}"          # ruta exportada en almacen
+nfs_allowed_network: 10.0.0.0/24                # red de datos a la que se exporta
+nfs_export_opts: ro,sync,no_subtree_check,root_squash
+nfs_mount_opts: ro,soft
 
 # Conexión a MariaDB de la aplicación guestbook
 guestbook_db_host: "{{ bd_ip_datos }}"

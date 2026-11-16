@@ -1,0 +1,44 @@
+- name: Instalar el servidor NFS
+  ansible.builtin.apt:
+    name: nfs-kernel-server
+    state: present
+
+- name: Crear el directorio que se exporta por NFS
+  ansible.builtin.file:
+    path: "{{ nfs_export_path }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Desplegar la aplicación Guestbook (único despliegue, compartido por NFS)
+  ansible.builtin.copy:
+    src: app/
+    dest: "{{ nfs_export_path }}/"
+    owner: www-data
+    group: www-data
+    mode: '0644'
+    directory_mode: '0755'
+
+- name: Crear el fichero de configuración config.php de la aplicación
+  ansible.builtin.template:
+    src: config.php.j2
+    dest: "{{ nfs_export_path }}/config.php"
+    owner: www-data
+    group: www-data
+    mode: '0640'
+
+- name: Configurar el recurso exportado en /etc/exports
+  ansible.builtin.template:
+    src: exports.j2
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reexportar nfs
+
+- name: Asegurar que el servidor NFS está arrancado y habilitado
+  ansible.builtin.service:
+    name: nfs-server
+    state: started
+    enabled: true

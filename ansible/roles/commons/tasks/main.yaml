@@ -18,6 +18,7 @@
       {{ web2_ip_datos }} {{ web2_nombre_datos }}
       {{ bd_ip_datos }} {{ bd_nombre_datos }}
       {{ balanceador_ip_datos }} {{ balanceador_nombre_datos }}
+      {{ almacen_ip_datos }} {{ almacen_nombre_datos }}
     owner: root
     group: root
     mode: '0644'

@@ -1,0 +1,4 @@
+# Fichero generado por Ansible (rol nfs): no lo edites a mano
+# Se exporta el DocumentRoot de la aplicación solo a la red de datos, en
+# modo solo lectura (los backends sirven la app, no la modifican).
+{{ nfs_export_path }} {{ nfs_allowed_network }}({{ nfs_export_opts }})
