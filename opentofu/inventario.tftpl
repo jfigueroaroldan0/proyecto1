@@ -17,6 +17,13 @@ all:
           ansible_ssh_private_key_file: ~/.ssh/id_rsa
 %{ endfor ~}
 
+    servidores_almacen:
+      hosts:
+        almacen:
+          ansible_host: ${ip_almacen}
+          ansible_user: debian
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
+
     servidores_bd:
       hosts:
         bd:

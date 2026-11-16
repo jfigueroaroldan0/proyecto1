@@ -18,6 +18,15 @@ output "balanceador" {
   }
 }
 
+# almacen: ip1 por DHCP (NAT), ip2 estática en datos (exporta el NFS)
+output "almacen" {
+  value = {
+    nombre = libvirt_domain.almacen.name
+    ip1    = try(libvirt_domain.almacen.network_interface[0].addresses[0], "No disponible")
+    ip2    = "10.0.0.40" # estática: está en cloud-init/network-config-almacen.yaml
+  }
+}
+
 # bd: ip1 por DHCP (NAT), ip2 estática en la red de datos
 output "bd" {
   value = {
