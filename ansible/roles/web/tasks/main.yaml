@@ -7,6 +7,7 @@
       - php-mysql
       - php-mbstring
       - mariadb-client   # para comprobar la conexión a la base de datos
+      - nfs-common       # cliente NFS para montar el DocumentRoot compartido
     state: present
 
 - name: Activar modulos de apache2
@@ -26,7 +27,7 @@
   loop: "{{ virtualhosts }}"
   notify: restart apache2
 
-- name: Crear DocumentRoot si no existe
+- name: Crear DocumentRoot si no existe (punto de montaje del NFS)
   ansible.builtin.file:
     path: "{{ item.datos.documentroot }}"
     state: directory
@@ -34,6 +35,16 @@
     group: www-data
     mode: '0755'
   loop: "{{ virtualhosts }}"
+
+# La aplicación no se copia en cada backend: se monta por NFS desde el
+# servidor "almacen", así los dos web sirven exactamente el mismo contenido.
+- name: Montar el DocumentRoot por NFS desde el servidor de almacenamiento
+  ansible.posix.mount:
+    src: "{{ almacen_ip_datos }}:{{ nfs_export_path }}"
+    path: "{{ base_web_path }}"
+    fstype: nfs
+    opts: "{{ nfs_mount_opts }}"
+    state: mounted
 
 - name: Activación de los VirtualHost
   file:
@@ -50,20 +61,3 @@
     path: /etc/apache2/sites-enabled/000-default.conf
     state: absent
   notify: restart apache2
-
-- name: Copiar aplicación Guestbook
-  ansible.builtin.copy:
-    src: app/
-    dest: "{{ base_web_path }}/"
-    owner: www-data
-    group: www-data
-    mode: '0644'
-    directory_mode: '0755'
-
-- name: Crear fichero de configuración config.php dentro de la aplicación
-  ansible.builtin.template:
-    src: config.php.j2
-    dest: "{{ base_web_path }}/config.php"
-    owner: www-data
-    group: www-data
-    mode: '0640'
