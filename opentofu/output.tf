@@ -1,10 +1,9 @@
-# web1 y web2: ip1 por DHCP (NAT), ip2 estática en la red de datos
+# web1 y web2: solo IP estática en la red de datos (ya no tienen interfaz NAT)
 output "web" {
   value = {
     for nombre, domain in libvirt_domain.web : nombre => {
       nombre = domain.name
-      ip1    = try(domain.network_interface[0].addresses[0], "No disponible")
-      ip2    = local.webs[nombre] # estática en la red de datos
+      ip2    = local.webs[nombre] # estática en la red de datos (única interfaz)
     }
   }
 }
@@ -18,11 +17,10 @@ output "balanceador" {
   }
 }
 
-# almacen: ip1 por DHCP (NAT), ip2 estática en datos (exporta el NFS)
+# almacen: solo IP estática en datos (exporta el NFS; ya no tiene interfaz NAT)
 output "almacen" {
   value = {
     nombre = libvirt_domain.almacen.name
-    ip1    = try(libvirt_domain.almacen.network_interface[0].addresses[0], "No disponible")
     ip2    = "10.0.0.40" # estática: está en cloud-init/network-config-almacen.yaml
   }
 }
