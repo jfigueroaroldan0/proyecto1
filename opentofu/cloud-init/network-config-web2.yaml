@@ -1,8 +1,15 @@
 network:
   version: 2
   ethernets:
-    ens3:
-      dhcp4: true                  # red NAT con DHCP
-    ens4:
+    # Al quitar la interfaz NAT, la red de datos pasa a ser la única interfaz.
+    # Se busca por nombre (en*) porque el nombre puede cambiar al quedar una sola.
+    datos:
+      match:
+        name: "en*"
       dhcp4: false
-      addresses: ["10.0.0.12/24"]  # red de datos (muy aislada)
+      addresses: ["10.0.0.12/24"]   # red de datos (muy aislada)
+      routes:
+        - to: default
+          via: 10.0.0.30            # salida a Internet por el balanceador (SNAT)
+      nameservers:
+        addresses: [1.1.1.1]
