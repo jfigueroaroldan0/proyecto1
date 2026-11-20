@@ -15,6 +15,8 @@ all:
           ansible_host: ${ip}
           ansible_user: debian
           ansible_ssh_private_key_file: ~/.ssh/id_rsa
+          # Sin interfaz NAT: se entra por la red de datos saltando por el balanceador
+          ansible_ssh_common_args: '-o ProxyJump=debian@${ip_balanceador} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 %{ endfor ~}
 
     servidores_almacen:
@@ -23,6 +25,8 @@ all:
           ansible_host: ${ip_almacen}
           ansible_user: debian
           ansible_ssh_private_key_file: ~/.ssh/id_rsa
+          # Sin interfaz NAT: se entra por la red de datos saltando por el balanceador
+          ansible_ssh_common_args: '-o ProxyJump=debian@${ip_balanceador} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
     servidores_bd:
       hosts:
