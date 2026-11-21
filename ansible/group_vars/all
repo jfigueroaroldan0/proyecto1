@@ -62,3 +62,9 @@ guestbook_db_password: guestbook_pass
 
 # Puerto en el que escucha HAProxy (punto de entrada)
 haproxy_frontend_port: 80
+
+# El balanceador actúa como router: da salida a Internet (SNAT) a las máquinas
+# de la red de datos muy aislada (los backends y el servidor de almacenamiento),
+# que ya no tienen interfaz NAT propia.
+red_datos_cidr: 10.0.0.0/24        # red a la que el balanceador da salida
+balanceador_iface_salida: ens3     # interfaz del balanceador hacia la red NAT
