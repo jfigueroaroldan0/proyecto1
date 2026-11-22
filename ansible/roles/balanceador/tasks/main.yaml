@@ -19,3 +19,14 @@
     name: haproxy
     state: started
     enabled: true
+
+# El balanceador hace de router de las máquinas de la red de datos muy aislada
+# (backends y almacén), que ya no tienen interfaz NAT: les da salida a Internet.
+
+- name: Router - activar el reenvío de paquetes IPv4
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: true
+    state: present
+    reload: true
