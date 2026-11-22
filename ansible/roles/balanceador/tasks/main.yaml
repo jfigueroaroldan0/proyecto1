@@ -30,3 +30,11 @@
     sysctl_set: true
     state: present
     reload: true
+
+- name: Router - SNAT (MASQUERADE) de la red de datos hacia la interfaz de salida
+  ansible.builtin.iptables:
+    table: nat
+    chain: POSTROUTING
+    source: "{{ red_datos_cidr }}"
+    out_interface: "{{ balanceador_iface_salida }}"
+    jump: MASQUERADE
