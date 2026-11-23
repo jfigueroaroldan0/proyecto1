@@ -34,3 +34,5 @@ all:
           ansible_host: ${ip_bd}
           ansible_user: ubuntu
           ansible_ssh_private_key_file: ~/.ssh/id_rsa
+          # Sin interfaz NAT: se entra por la red de datos saltando por el balanceador
+          ansible_ssh_common_args: '-o ProxyJump=debian@${ip_balanceador} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'

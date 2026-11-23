@@ -14,7 +14,7 @@
     state: present
   notify: restart mariadb
 
-# Si MariaDB arranca antes de que ens4 tenga IP no puede escuchar en ella:
+# Si MariaDB arranca antes de que la interfaz de la red de datos tenga IP no puede escuchar en ella:
 # que espere a que la red esté configurada (importa al reiniciar la máquina)
 - name: Crear directorio de configuración de systemd para mariadb
   ansible.builtin.file:

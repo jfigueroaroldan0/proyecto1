@@ -170,13 +170,8 @@ resource "libvirt_domain" "bd" {
   memory = var.memoria_bd
   vcpu   = 1
 
-  # Red 1 (ens3): NAT con DHCP
-  network_interface {
-    network_id     = libvirt_network.p1-red-nat.id
-    wait_for_lease = true
-  }
-
-  # Red 2 (ens4): red de datos (IP estática 10.0.0.20)
+  # Única red: red de datos muy aislada (IP estática 10.0.0.20).
+  # Ya no tiene interfaz NAT: la salida a Internet la da el balanceador por SNAT.
   network_interface {
     network_id = libvirt_network.p1-red-datos.id
   }

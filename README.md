@@ -6,7 +6,7 @@ Escenario creado con **OpenTofu** (libvirt/KVM) y configurado con **Ansible** qu
 
 **Modificación 2 (almacenamiento compartido):** se añade una máquina `almacen` con un **servidor NFS** que exporta el **DocumentRoot** de la aplicación. Los dos backends ya no guardan una copia propia de la web: la **montan por NFS** desde `almacen`, así se despliega la aplicación una sola vez y ambos sirven exactamente el mismo contenido (una única fuente de verdad).
 
-**Modificación 3 (red muy aislada + balanceador de router):** se les quita la interfaz de red NAT a los **dos backends** y al **servidor de almacenamiento**, de modo que la red de datos pasa a ser una red totalmente aislada. El `balanceador` hace de **router** y da salida a Internet a esas máquinas mediante **SNAT** (`MASQUERADE`): reenvío de paquetes IPv4 activado y enmascaramiento de `10.0.0.0/24` hacia su interfaz NAT. Las máquinas aisladas tienen su ruta por defecto hacia el balanceador (`10.0.0.30`) y DNS `1.1.1.1`. Como ya no son accesibles por NAT desde el anfitrión, Ansible llega a ellas por su IP de datos saltando por el balanceador (`ProxyJump`).
+**Modificación 3 (red muy aislada + balanceador de router):** se les quita la interfaz de red NAT a los **dos backends**, al **servidor de almacenamiento** y al **servidor de base de datos**, de modo que la red de datos pasa a ser una red totalmente aislada. El `balanceador` hace de **router** y da salida a Internet a esas máquinas mediante **SNAT** (`MASQUERADE`): reenvío de paquetes IPv4 activado y enmascaramiento de `10.0.0.0/24` hacia su interfaz NAT. Las máquinas aisladas tienen su ruta por defecto hacia el balanceador (`10.0.0.30`) y DNS `1.1.1.1`. Como ya no son accesibles por NAT desde el anfitrión, Ansible llega a ellas por su IP de datos saltando por el balanceador (`ProxyJump`).
 
 ## Escenario
 
@@ -28,8 +28,7 @@ Escenario creado con **OpenTofu** (libvirt/KVM) y configurado con **Ansible** qu
      └─ montan NFS ┴────────────────┘
 ```
 
-- `web1`, `web2` y `almacen`: una sola interfaz, en la red de datos, **sin NAT**. Su salida a Internet (para `apt`) la da el balanceador por SNAT, y Ansible entra a ellas por `ProxyJump` a través del balanceador.
-- `bd` conserva su interfaz NAT (DHCP) además de la de datos.
+- `web1`, `web2`, `almacen` y `bd`: una sola interfaz, en la red de datos, **sin NAT**. Su salida a Internet (para `apt`) la da el balanceador por SNAT, y Ansible entra a ellas por `ProxyJump` a través del balanceador.
 
 | Máquina | Imagen | Red NAT (ens3) | Red de datos | Grupo de Ansible | Acceso de Ansible |
 |---|---|---|---|---|---|
@@ -37,7 +36,7 @@ Escenario creado con **OpenTofu** (libvirt/KVM) y configurado con **Ansible** qu
 | web1 | Debian 13 | — | 10.0.0.11 | `servidores_web` | ProxyJump por el balanceador |
 | web2 | Debian 13 | — | 10.0.0.12 | `servidores_web` | ProxyJump por el balanceador |
 | almacen | Debian 13 | — | 10.0.0.40 | `servidores_almacen` | ProxyJump por el balanceador |
-| bd  | Ubuntu 26.04 | DHCP | 10.0.0.20 | `servidores_bd` | directo (NAT) |
+| bd  | Ubuntu 26.04 | — | 10.0.0.20 | `servidores_bd` | ProxyJump por el balanceador |
 
 El anfitrión solo habla con el **balanceador** (red NAT); HAProxy reparte hacia `web1` y `web2`, que sirven la aplicación montada por **NFS** desde `almacen`. Todo el tráfico de datos (balanceo, NFS y BD) va por la **red de datos**, aislada, y la salida a Internet de las máquinas aisladas pasa por el balanceador.
 
@@ -51,7 +50,7 @@ opentofu/
 ├── main.tf                  web (for_each: web1/web2), balanceador, almacen y bd
 ├── output.tf                nombre e IP de cada máquina
 ├── inventario.tf            genera ../ansible/hosts a partir de inventario.tftpl
-├── inventario.tftpl         (web1/web2/almacen entran por ProxyJump por el balanceador)
+├── inventario.tftpl         (web1/web2/almacen/bd entran por ProxyJump por el balanceador)
 └── cloud-init/              un YAML por máquina (user-data y network-config)
 ansible/
 ├── ansible.cfg
@@ -112,7 +111,7 @@ Opcionalmente, se añade un nombre en el `/etc/hosts` del anfitrión apuntando a
 
 ```bash
 tofu output                    # IP de las máquinas
-cat ../ansible/hosts           # inventario generado (web1/web2/almacen por ProxyJump)
+cat ../ansible/hosts           # inventario generado (web1/web2/almacen/bd por ProxyJump)
 ansible-playbook site.yaml     # segunda ejecución: changed=0
 
 # El balanceador hace de router: reenvío activo y SNAT de la red de datos.

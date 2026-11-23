@@ -25,11 +25,10 @@ output "almacen" {
   }
 }
 
-# bd: ip1 por DHCP (NAT), ip2 estática en la red de datos
+# bd: solo IP estática en datos (MariaDB; ya no tiene interfaz NAT)
 output "bd" {
   value = {
     nombre = libvirt_domain.bd.name
-    ip1    = try(libvirt_domain.bd.network_interface[0].addresses[0], "No disponible")
     ip2    = "10.0.0.20" # estática: está en cloud-init/network-config-bd.yaml
   }
 }

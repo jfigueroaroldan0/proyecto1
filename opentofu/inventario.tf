@@ -8,6 +8,6 @@ resource "local_file" "inventario" {
     webs           = local.webs # IP estática en la red de datos de cada web
     ip_balanceador = try(libvirt_domain.balanceador.network_interface[0].addresses[0], "")
     ip_almacen     = "10.0.0.40"
-    ip_bd          = try(libvirt_domain.bd.network_interface[0].addresses[0], "")
+    ip_bd          = "10.0.0.20"
   })
 }
