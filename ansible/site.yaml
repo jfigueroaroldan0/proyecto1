@@ -13,6 +13,14 @@
         path: /var/lib/cloud/instance/boot-finished
         timeout: 300
 
+# El balanceador se configura el primero: hace de router y da salida a Internet
+# (SNAT) a las máquinas de la red de datos muy aislada, que la necesitan para que
+# el rol commons y los demás puedan instalar paquetes con apt.
+- hosts: servidores_balanceador
+  become: true
+  roles:
+   - role: balanceador
+
 - hosts: all
   become: true
   roles:
@@ -34,8 +42,3 @@
   become: true
   roles:
    - role: web
-
-- hosts: servidores_balanceador
-  become: true
-  roles:
-   - role: balanceador

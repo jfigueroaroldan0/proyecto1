@@ -1,4 +1,4 @@
-# Proyecto 1: Infraestructura como código — Modificaciones 1 y 2 (Balanceo HAProxy + Almacenamiento compartido NFS)
+# Proyecto 1: Infraestructura como código — Modificaciones 1, 2 y 3 (Balanceo HAProxy + Almacenamiento compartido NFS + Red muy aislada con el balanceador de router)
 
 Escenario creado con **OpenTofu** (libvirt/KVM) y configurado con **Ansible** que pone en producción la aplicación [guestbook_php](https://github.com/josedom24/guestbook_php) (PHP + MariaDB).
 
@@ -6,39 +6,40 @@ Escenario creado con **OpenTofu** (libvirt/KVM) y configurado con **Ansible** qu
 
 **Modificación 2 (almacenamiento compartido):** se añade una máquina `almacen` con un **servidor NFS** que exporta el **DocumentRoot** de la aplicación. Los dos backends ya no guardan una copia propia de la web: la **montan por NFS** desde `almacen`, así se despliega la aplicación una sola vez y ambos sirven exactamente el mismo contenido (una única fuente de verdad).
 
+**Modificación 3 (red muy aislada + balanceador de router):** se les quita la interfaz de red NAT a los **dos backends** y al **servidor de almacenamiento**, de modo que la red de datos pasa a ser una red totalmente aislada. El `balanceador` hace de **router** y da salida a Internet a esas máquinas mediante **SNAT** (`MASQUERADE`): reenvío de paquetes IPv4 activado y enmascaramiento de `10.0.0.0/24` hacia su interfaz NAT. Las máquinas aisladas tienen su ruta por defecto hacia el balanceador (`10.0.0.30`) y DNS `1.1.1.1`. Como ya no son accesibles por NAT desde el anfitrión, Ansible llega a ellas por su IP de datos saltando por el balanceador (`ProxyJump`).
+
 ## Escenario
 
 ```
-                        Anfitrión
-                            │ 192.168.210.1
-                    ┌───────┴────────┐
-                    │  p1-red-nat    │  192.168.210.0/24 (NAT + DHCP)
-                    └───────┬────────┘
-                       ens3 │ DHCP
-                   ┌────────┴────────┐
-                   │   balanceador   │  HAProxy (entrada)
-                   └────────┬────────┘ ens4 10.0.0.30
-       ┌─────────────────┬──┴──────────────┬─────────────────┐  (red de datos)
-  ens4 │ 10.0.0.11  ens4 │ 10.0.0.12  ens4 │ 10.0.0.20   ens4 │ 10.0.0.40
-┌──────┴──────┐   ┌──────┴──────┐   ┌──────┴──────┐   ┌────────┴────────┐
-│    web1     │   │    web2     │   │     bd      │   │     almacen     │
-│ Apache+PHP  │   │ Apache+PHP  │   │   MariaDB   │   │ NFS (DocumentRoot)
-└──────┬──────┘   └──────┬──────┘   └─────────────┘   └────────┬────────┘
-       └── montan NFS ───┴───────────────────────────────────┘
-   p1-red-datos (muy aislada) · 10.0.0.0/24 · sin DHCP · el anfitrión no tiene IP
+                         Anfitrión
+                             │ red NAT p1-red-nat 192.168.210.0/24 (DHCP)
+                     ┌───────┴────────┐
+                     │   balanceador  │  HAProxy (entrada) + router (SNAT)
+                     │   ens3 → NAT    │
+                     └───────┬────────┘ ens4 10.0.0.30  (gateway de la red de datos)
+                             │
+  p1-red-datos (muy aislada) · 10.0.0.0/24 · sin DHCP · el anfitrión no tiene IP
+     ┌─────────────┬─────────┴──────┬─────────────────┐
+     │ 10.0.0.11   │ 10.0.0.12      │ 10.0.0.40        │ 10.0.0.20
+┌────┴─────┐  ┌────┴─────┐   ┌──────┴──────┐   ┌───────┴───────┐
+│   web1   │  │   web2   │   │   almacen   │   │      bd       │
+│Apache+PHP│  │Apache+PHP│   │ NFS DocRoot │   │    MariaDB    │
+└────┬─────┘  └────┬─────┘   └──────┬──────┘   └───────────────┘
+     └─ montan NFS ┴────────────────┘
 ```
 
-(web1, web2, bd y almacen también tienen interfaz en la red NAT con DHCP, para instalar paquetes.)
+- `web1`, `web2` y `almacen`: una sola interfaz, en la red de datos, **sin NAT**. Su salida a Internet (para `apt`) la da el balanceador por SNAT, y Ansible entra a ellas por `ProxyJump` a través del balanceador.
+- `bd` conserva su interfaz NAT (DHCP) además de la de datos.
 
-| Máquina | Imagen | Red NAT (ens3) | Red de datos (ens4) | Grupo de Ansible |
-|---|---|---|---|---|
-| balanceador | Debian 13 | DHCP | 10.0.0.30 | `servidores_balanceador` |
-| web1 | Debian 13 | DHCP | 10.0.0.11 | `servidores_web` |
-| web2 | Debian 13 | DHCP | 10.0.0.12 | `servidores_web` |
-| bd  | Ubuntu 26.04 | DHCP | 10.0.0.20 | `servidores_bd` |
-| almacen | Debian 13 | DHCP | 10.0.0.40 | `servidores_almacen` |
+| Máquina | Imagen | Red NAT (ens3) | Red de datos | Grupo de Ansible | Acceso de Ansible |
+|---|---|---|---|---|---|
+| balanceador | Debian 13 | DHCP | 10.0.0.30 | `servidores_balanceador` | directo (NAT) |
+| web1 | Debian 13 | — | 10.0.0.11 | `servidores_web` | ProxyJump por el balanceador |
+| web2 | Debian 13 | — | 10.0.0.12 | `servidores_web` | ProxyJump por el balanceador |
+| almacen | Debian 13 | — | 10.0.0.40 | `servidores_almacen` | ProxyJump por el balanceador |
+| bd  | Ubuntu 26.04 | DHCP | 10.0.0.20 | `servidores_bd` | directo (NAT) |
 
-El anfitrión solo habla con el **balanceador** (red NAT); HAProxy reparte hacia `web1` y `web2`, que sirven la aplicación montada por **NFS** desde `almacen`. Todo el tráfico de datos (balanceo, NFS y BD) va por la **red de datos**, aislada.
+El anfitrión solo habla con el **balanceador** (red NAT); HAProxy reparte hacia `web1` y `web2`, que sirven la aplicación montada por **NFS** desde `almacen`. Todo el tráfico de datos (balanceo, NFS y BD) va por la **red de datos**, aislada, y la salida a Internet de las máquinas aisladas pasa por el balanceador.
 
 ## Estructura del repositorio
 
@@ -48,20 +49,20 @@ opentofu/
 ├── variables.tf             pool, imágenes base y memoria de las máquinas
 ├── network.tf               red NAT con DHCP y red de datos muy aislada
 ├── main.tf                  web (for_each: web1/web2), balanceador, almacen y bd
-├── output.tf                nombre e IP (NAT y datos) de cada máquina
+├── output.tf                nombre e IP de cada máquina
 ├── inventario.tf            genera ../ansible/hosts a partir de inventario.tftpl
-├── inventario.tftpl
+├── inventario.tftpl         (web1/web2/almacen entran por ProxyJump por el balanceador)
 └── cloud-init/              un YAML por máquina (user-data y network-config)
 ansible/
 ├── ansible.cfg
-├── site.yaml
-├── group_vars/all           nombres, IP, backends, NFS, usuarios y contraseñas
+├── site.yaml                el balanceador se configura el primero (router)
+├── group_vars/all           nombres, IP, backends, NFS, usuarios, contraseñas y router
 └── roles/
     ├── commons/             actualiza el sistema, paquetes comunes, /etc/hosts
     ├── bd/                  MariaDB, base de datos, usuario (desde los dos web) y tablas
     ├── nfs/                 servidor NFS + despliegue único de la aplicación (files/app/)
     ├── web/                 Apache + PHP, virtual host y montaje NFS del DocumentRoot
-    └── balanceador/         HAProxy (reparto round-robin entre web1 y web2)
+    └── balanceador/         HAProxy (round-robin) + router (ip_forward + SNAT)
 ```
 
 ## Requisitos
@@ -94,8 +95,11 @@ cd ../ansible
 ansible-playbook site.yaml
 ```
 
-El orden del playbook es importante: `almacen` (NFS) se configura **antes** que los backends `web`,
-porque estos montan desde él su DocumentRoot.
+El orden del playbook es importante:
+
+- El `balanceador` se configura **el primero**: hace de router y da salida a Internet (SNAT) a las
+  máquinas aisladas, que la necesitan para que `commons` y los demás roles puedan instalar paquetes con `apt`.
+- `almacen` (NFS) se configura **antes** que los backends `web`, porque estos montan desde él su DocumentRoot.
 
 Para entrar a la aplicación, se usa la IP del **balanceador** en la red NAT (la muestra `tofu output`).
 Opcionalmente, se añade un nombre en el `/etc/hosts` del anfitrión apuntando a esa IP:
@@ -108,12 +112,18 @@ Opcionalmente, se añade un nombre en el `/etc/hosts` del anfitrión apuntando a
 
 ```bash
 tofu output                    # IP de las máquinas
-cat ../ansible/hosts           # inventario generado (web1, web2, balanceador, almacen, bd)
+cat ../ansible/hosts           # inventario generado (web1/web2/almacen por ProxyJump)
 ansible-playbook site.yaml     # segunda ejecución: changed=0
 
+# El balanceador hace de router: reenvío activo y SNAT de la red de datos.
+ansible balanceador -b -m shell -a "sysctl -n net.ipv4.ip_forward; iptables -t nat -S POSTROUTING"
+
+# Las máquinas aisladas no tienen NAT pero salen a Internet por el balanceador (SNAT).
+ansible web1 -m shell -a "ip -br addr; ip route; ping -c1 1.1.1.1"
+
 # El almacenamiento compartido: el recurso NFS está exportado y los web lo montan.
-ssh debian@<ip_nat_almacen> "showmount -e localhost"      # muestra /var/www/guestbook
-ssh debian@<ip_nat_web1>    "mount | grep guestbook"      # nfs sobre /var/www/guestbook
+ansible almacen -b -m shell -a "exportfs -v"           # muestra /var/www/guestbook
+ansible web1    -m shell -a "findmnt /var/www/guestbook"
 
 # El balanceo: varias peticiones al balanceador caen alternando entre web1 y web2.
 # Se ve el reparto en la página de estadísticas de HAProxy:

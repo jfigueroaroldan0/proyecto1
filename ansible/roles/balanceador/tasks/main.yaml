@@ -2,6 +2,9 @@
   ansible.builtin.apt:
     name: haproxy
     state: present
+    # El balanceador se configura el primero (da salida al resto), así que
+    # refresca la lista de paquetes él mismo en lugar de depender del rol commons.
+    update_cache: true
 
 - name: Configurar HAProxy (frontend y backends)
   ansible.builtin.template:
