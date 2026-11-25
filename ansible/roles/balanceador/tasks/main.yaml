@@ -41,3 +41,17 @@
     source: "{{ red_datos_cidr }}"
     out_interface: "{{ balanceador_iface_salida }}"
     jump: MASQUERADE
+
+# El balanceador es el punto de salto (ProxyJump) de las máquinas aisladas.
+# Ansible abre varias conexiones SSH a la vez a través de él; con el límite por
+# defecto del sshd (MaxStartups 10) se descartan conexiones y los hosts salen
+# como UNREACHABLE. Se sube el límite para que aguante el salto en paralelo.
+- name: Salto - subir el límite de conexiones concurrentes del sshd
+  ansible.builtin.copy:
+    src: sshd-salto.conf
+    dest: /etc/ssh/sshd_config.d/99-salto.conf
+    owner: root
+    group: root
+    mode: '0644'
+    validate: 'sshd -t -f %s'
+  notify: reload ssh
