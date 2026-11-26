@@ -1,0 +1,9 @@
+# Estado de OpenTofu / Terraform (no se sube al repositorio)
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Inventario de Ansible generado por OpenTofu (inventario.tf)
+ansible/hosts
