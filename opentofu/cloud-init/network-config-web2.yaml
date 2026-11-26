@@ -12,4 +12,4 @@ network:
         - to: default
           via: 10.0.0.30            # salida a Internet por el balanceador (SNAT)
       nameservers:
-        addresses: [1.1.1.1]
+        addresses: [192.168.210.1]

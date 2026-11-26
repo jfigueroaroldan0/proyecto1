@@ -17,3 +17,29 @@ chpasswd:
       type: text
 
 timezone: Europe/Madrid
+
+# El balanceador es el punto de salto (ProxyJump) de las máquinas de la red muy
+# aislada (web1, web2, almacen y bd). Ansible abre muchas conexiones SSH a través
+# de él, y el sshd de Debian 13 (OpenSSH 10) hay que ajustarlo en dos puntos:
+#   - MaxStartups por defecto (10:30:100) descarta conexiones al pasar de 10
+#     arranques concurrentes, lo que Ansible ve como hosts UNREACHABLE.
+#   - PerSourcePenalties (activo por defecto) penaliza la IP de origen por las
+#     conexiones que no se autentican CONTRA el salto: justo lo que hace
+#     ProxyJump, que usa el salto solo como túnel. Tras acumular penalización,
+#     el sshd bloquea al anfitrión y Ansible se queda reintentando sin entrar.
+# Se ajusta ya en cloud-init (antes de que Ansible entre), porque el parche no
+# puede depender del propio salto para aplicarse.
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-salto.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      # Colocado por cloud-init: el balanceador nace preparado como punto de salto.
+      MaxStartups 100:30:200
+      MaxSessions 50
+      # El salto recibe muchas conexiones-túnel de ProxyJump que no se autentican
+      # contra él; sin esto, PerSourcePenalties bloquea al anfitrión.
+      PerSourcePenalties no
+
+runcmd:
+  - systemctl reload ssh

@@ -15,8 +15,12 @@ all:
           ansible_host: ${ip}
           ansible_user: debian
           ansible_ssh_private_key_file: ~/.ssh/id_rsa
-          # Sin interfaz NAT: se entra por la red de datos saltando por el balanceador
-          ansible_ssh_common_args: '-o ProxyJump=debian@${ip_balanceador} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+          # Sin interfaz NAT: se entra por la red de datos saltando por el balanceador.
+          # Se usa ProxyCommand (no ProxyJump) para que el ssh del salto lleve SUS
+          # propias opciones de host key: con ProxyJump, StrictHostKeyChecking=no y
+          # UserKnownHostsFile=/dev/null solo afectan al destino, no al salto, y como
+          # la host key del balanceador cambia en cada despliegue el salto fallaría.
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyCommand="ssh -W %h:%p -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -i ~/.ssh/id_rsa debian@${ip_balanceador}"'
 %{ endfor ~}
 
     servidores_almacen:
@@ -25,8 +29,12 @@ all:
           ansible_host: ${ip_almacen}
           ansible_user: debian
           ansible_ssh_private_key_file: ~/.ssh/id_rsa
-          # Sin interfaz NAT: se entra por la red de datos saltando por el balanceador
-          ansible_ssh_common_args: '-o ProxyJump=debian@${ip_balanceador} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+          # Sin interfaz NAT: se entra por la red de datos saltando por el balanceador.
+          # Se usa ProxyCommand (no ProxyJump) para que el ssh del salto lleve SUS
+          # propias opciones de host key: con ProxyJump, StrictHostKeyChecking=no y
+          # UserKnownHostsFile=/dev/null solo afectan al destino, no al salto, y como
+          # la host key del balanceador cambia en cada despliegue el salto fallaría.
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyCommand="ssh -W %h:%p -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -i ~/.ssh/id_rsa debian@${ip_balanceador}"'
 
     servidores_bd:
       hosts:
@@ -34,5 +42,9 @@ all:
           ansible_host: ${ip_bd}
           ansible_user: ubuntu
           ansible_ssh_private_key_file: ~/.ssh/id_rsa
-          # Sin interfaz NAT: se entra por la red de datos saltando por el balanceador
-          ansible_ssh_common_args: '-o ProxyJump=debian@${ip_balanceador} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+          # Sin interfaz NAT: se entra por la red de datos saltando por el balanceador.
+          # Se usa ProxyCommand (no ProxyJump) para que el ssh del salto lleve SUS
+          # propias opciones de host key: con ProxyJump, StrictHostKeyChecking=no y
+          # UserKnownHostsFile=/dev/null solo afectan al destino, no al salto, y como
+          # la host key del balanceador cambia en cada despliegue el salto fallaría.
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyCommand="ssh -W %h:%p -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -i ~/.ssh/id_rsa debian@${ip_balanceador}"'
